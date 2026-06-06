@@ -117,6 +117,21 @@ impl SharkyDataType {
             _ => None,
         }
     }
+
+    pub fn to_heap_reference(&self) -> Option<SharkyDataType> {
+        match *self {
+            SharkyDataType::Max(v) => {
+                Some(SharkyDataType::HeapReference(v as SharkyHeapFrameIndex))
+            }
+            SharkyDataType::Int(v) => {
+                Some(SharkyDataType::HeapReference(v as SharkyHeapFrameIndex))
+            }
+            SharkyDataType::Byte(v) => {
+                Some(SharkyDataType::HeapReference(v as SharkyHeapFrameIndex))
+            }
+            _ => None,
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone)]
