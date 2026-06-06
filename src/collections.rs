@@ -76,7 +76,6 @@ pub struct SharkyMemoryLayout {
     operational_stack: SharkyDataStack,
     transitional_stack: SharkyDataStack,
     parameter_stack: SharkyDataStack,
-    string_stack: SharkyDataStack,
 
     local_stacks: Vec<SharkyDataStack>,
     selected_local_stack: usize,

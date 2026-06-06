@@ -65,14 +65,65 @@ impl std::fmt::Display for SharkyDataType {
     }
 }
 
+impl SharkyDataType {
+    pub fn to_bool(&self) -> Option<SharkyDataType> {
+        match *self {
+            SharkyDataType::Nil => Some(SharkyDataType::Bool(false)),
+            SharkyDataType::Max(v) => Some(SharkyDataType::Bool(v != 0)),
+            SharkyDataType::Int(v) => Some(SharkyDataType::Bool(v != 0)),
+            SharkyDataType::Byte(v) => Some(SharkyDataType::Bool(v != 0)),
+            _ => None,
+        }
+    }
+
+    pub fn to_max(&self) -> Option<SharkyDataType> {
+        match *self {
+            SharkyDataType::Nil => Some(SharkyDataType::Max(0)),
+            SharkyDataType::Bool(v) => Some(SharkyDataType::Max(if v { 1 } else { 0 })),
+            SharkyDataType::Int(v) => Some(SharkyDataType::Max(v as SharkyMax)),
+            SharkyDataType::Byte(v) => Some(SharkyDataType::Max(v as SharkyMax)),
+            SharkyDataType::Real(v) => Some(SharkyDataType::Max(v.trunc() as SharkyMax)),
+            _ => None,
+        }
+    }
+
+    pub fn to_int(&self) -> Option<SharkyDataType> {
+        match *self {
+            SharkyDataType::Nil => Some(SharkyDataType::Int(0)),
+            SharkyDataType::Bool(v) => Some(SharkyDataType::Int(if v { 1 } else { 0 })),
+            SharkyDataType::Max(v) => Some(SharkyDataType::Int(v as SharkyInt)),
+            SharkyDataType::Byte(v) => Some(SharkyDataType::Int(v as SharkyInt)),
+            SharkyDataType::Real(v) => Some(SharkyDataType::Int(v.trunc() as SharkyInt)),
+            _ => None,
+        }
+    }
+
+    pub fn to_byte(&self) -> Option<SharkyDataType> {
+        match *self {
+            SharkyDataType::Nil => Some(SharkyDataType::Byte(0)),
+            SharkyDataType::Bool(v) => Some(SharkyDataType::Byte(if v { 1 } else { 0 })),
+            SharkyDataType::Int(v) => Some(SharkyDataType::Byte(v as SharkyByte)),
+            SharkyDataType::Max(v) => Some(SharkyDataType::Byte(v as SharkyByte)),
+            SharkyDataType::Real(v) => Some(SharkyDataType::Byte(v.trunc() as SharkyByte)),
+            _ => None,
+        }
+    }
+
+    pub fn to_real(&self) -> Option<SharkyDataType> {
+        match *self {
+            SharkyDataType::Max(v) => Some(SharkyDataType::Real(v as SharkyReal)),
+            SharkyDataType::Int(v) => Some(SharkyDataType::Real(v as SharkyReal)),
+            SharkyDataType::Byte(v) => Some(SharkyDataType::Real(v as SharkyReal)),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Default, Debug, Clone)]
 pub enum SharkyStackMode {
     #[default]
     Indexed,
-    Addressed,
     Operative,
-    Native,
     Parameter,
-    String,
     Transitional,
 }
