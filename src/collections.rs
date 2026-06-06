@@ -1,9 +1,8 @@
 #![allow(dead_code)]
-use std::{fmt::Display, sync::{Arc}};
+use crate::data_types::*;
 use parking_lot::{RawRwLock, RwLock, lock_api::RwLockReadGuard};
 use slab::Slab;
-use crate::{data_types::*};
-
+use std::{fmt::Display, sync::Arc};
 
 pub trait TypicalData: Clone + Default + std::cmp::PartialEq {}
 impl<T> TypicalData for T where T: Clone + Default + std::cmp::PartialEq {}
@@ -15,17 +14,15 @@ pub struct SharkyStack<T> {
 
 impl<T: TypicalData> SharkyStack<T> {
     pub fn default() -> Self {
-        Self { 
-            stack: Vec::new()
-        }
+        Self { stack: Vec::new() }
     }
-    
+
     pub fn get_vec(&self) -> &Vec<T> {
         &self.stack
     }
 
     pub fn search(&self, value: &T) -> bool {
-        self.stack.iter().any(move |v| { *v == *value })
+        self.stack.iter().any(move |v| *v == *value)
     }
 
     pub fn iter(&self) -> std::slice::Iter<'_, T> {
@@ -40,10 +37,10 @@ impl<T: TypicalData> SharkyStack<T> {
         self.stack.push(data);
     }
 
-    pub fn set(&mut self, index: usize, data: T) {
-        if let Some(val) = self.stack.get_mut(index) {
-            *val = data;
-        }
+    pub fn set(&mut self, index: usize, data: T) -> Option<()> {
+        let val = self.stack.get_mut(index)?;
+        *val = data;
+        Some(())
     }
 
     pub fn read(&self, index: usize) -> Option<&T> {
@@ -64,14 +61,13 @@ impl<T: TypicalData> SharkyStack<T> {
 }
 
 impl<T: TypicalData + Display> SharkyStack<T> {
-        pub fn debug_print_stack(&self) {
+    pub fn debug_print_stack(&self) {
         let mut point = 0;
         println!("--- SHARKY STACK DEBUG PRINT ---");
         for i in self.stack.iter() {
             println!("{point} - [{i}]\n--------------------------------");
             point += 1;
         }
-        
     }
 }
 
@@ -88,18 +84,18 @@ pub struct SharkyMemoryLayout {
 }
 
 impl SharkyMemoryLayout {
-    pub fn new() -> Self { 
+    pub fn new() -> Self {
         let mut result = Self::default();
         result.local_stacks.push(SharkyDataStack::default()); // initialize the local stacks with a minimum of one stack.
-        result 
+        result
     }
-    
+
     pub fn has_heap_ref(&self, index: SharkyHeapFrameIndex) -> bool {
         let heap_value = SharkyDataType::HeapReference(index);
-        self.transitional_stack.search(&heap_value) ||
-        self.operational_stack.search(&heap_value) ||
-        self.parameter_stack.search(&heap_value) ||
-        self.local_stacks.iter().any(move |v| { v.search(&heap_value) }) 
+        self.transitional_stack.search(&heap_value)
+            || self.operational_stack.search(&heap_value)
+            || self.parameter_stack.search(&heap_value)
+            || self.local_stacks.iter().any(move |v| v.search(&heap_value))
     }
 
     pub fn set_stack_mode(&mut self, mode: SharkyStackMode) {
@@ -115,7 +111,7 @@ impl SharkyMemoryLayout {
     }
 
     pub fn select_local_stack(&mut self, index: usize) {
-        self.selected_local_stack = index; 
+        self.selected_local_stack = index;
     }
 
     pub fn get_transitional_stack(&mut self) -> &mut SharkyDataStack {
@@ -124,8 +120,8 @@ impl SharkyMemoryLayout {
 
     pub fn get_parameter_stack_mut(&mut self) -> &mut SharkyDataStack {
         &mut self.parameter_stack
-    }    
-    
+    }
+
     pub fn get_parameter_stack(&self) -> &SharkyDataStack {
         &self.parameter_stack
     }
@@ -154,35 +150,23 @@ impl SharkyMemoryLayout {
                 let selected = self.selected_local_stack;
                 self.local_stacks.get_mut(selected)
             }
-            SharkyStackMode::Transitional => {
-                Some(&mut self.transitional_stack)
-            }
-            SharkyStackMode::Operative => {
-                Some(&mut self.operational_stack)
-            }
-            SharkyStackMode::Parameter => {
-                Some(&mut self.parameter_stack)
-            }
+            SharkyStackMode::Transitional => Some(&mut self.transitional_stack),
+            SharkyStackMode::Operative => Some(&mut self.operational_stack),
+            SharkyStackMode::Parameter => Some(&mut self.parameter_stack),
 
             _ => None,
         }
     }
 
     pub fn get_active_stack(&self) -> Option<&SharkyDataStack> {
-                match self.stack_mode {
+        match self.stack_mode {
             SharkyStackMode::Indexed => {
                 let selected = self.selected_local_stack;
                 self.local_stacks.get(selected)
             }
-            SharkyStackMode::Transitional => {
-                Some(&self.operational_stack)
-            }
-            SharkyStackMode::Operative => {
-                Some(&self.operational_stack)
-            }
-            SharkyStackMode::Parameter => {
-                Some(&self.parameter_stack)
-            }
+            SharkyStackMode::Transitional => Some(&self.operational_stack),
+            SharkyStackMode::Operative => Some(&self.operational_stack),
+            SharkyStackMode::Parameter => Some(&self.parameter_stack),
             _ => None,
         }
     }
@@ -203,7 +187,9 @@ impl SharkyHeap {
         }
     }
 
-    pub fn new() -> Self {Self::default()}
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     fn get_memory(&self) -> RwLockReadGuard<'_, RawRwLock, Slab<RwLock<SharkyDataStack>>> {
         self.memory.read()
@@ -230,7 +216,9 @@ impl SharkyHeap {
 
     pub fn allocate(&mut self) -> SharkyHeapFrameIndex {
         *self.allocation_count.write() += 1;
-        self.memory.write().insert(RwLock::new(SharkyDataStack::default()))
+        self.memory
+            .write()
+            .insert(RwLock::new(SharkyDataStack::default()))
     }
 
     pub fn free(&mut self, frame: SharkyHeapFrameIndex) {
@@ -244,7 +232,11 @@ impl SharkyHeap {
         Some(())
     }
 
-    pub fn read(&self, frame_addr: SharkyHeapFrameIndex, index: SharkyHeapCellIndex) -> Option<SharkyDataType> {
+    pub fn read(
+        &self,
+        frame_addr: SharkyHeapFrameIndex,
+        index: SharkyHeapCellIndex,
+    ) -> Option<SharkyDataType> {
         let memory = self.get_memory();
         let frame = memory.get(frame_addr)?.read();
         let value = frame.read(index)?;
@@ -259,14 +251,22 @@ impl SharkyHeap {
         Some(self.memory.read().get(frame_addr)?.read().clone())
     }
 
-    pub fn set(&self, frame_addr: SharkyHeapFrameIndex, index: SharkyHeapCellIndex, data: &SharkyDataType) -> Option<()> {
+    pub fn set(
+        &self,
+        frame_addr: SharkyHeapFrameIndex,
+        index: SharkyHeapCellIndex,
+        data: &SharkyDataType,
+    ) -> Option<()> {
         let memory = self.get_memory();
         let mut frame = memory.get(frame_addr)?.write();
         frame.set(index, data.clone());
         Some(())
     }
-    
-    pub fn clone_frame(&mut self, frame_addr: SharkyHeapFrameIndex) -> Option<SharkyHeapFrameIndex>{
+
+    pub fn clone_frame(
+        &mut self,
+        frame_addr: SharkyHeapFrameIndex,
+    ) -> Option<SharkyHeapFrameIndex> {
         let mut memory = self.memory.write();
         let frame = memory.get(frame_addr)?.read().clone();
         *self.allocation_count.write() += 1;
@@ -279,17 +279,20 @@ impl SharkyHeap {
     }
 
     pub fn collect_heap_indexes(&self) -> Vec<SharkyHeapFrameIndex> {
-        self.memory.read().iter().map(|(key, _)| {key}).collect()
+        self.memory.read().iter().map(|(key, _)| key).collect()
     }
 
     pub fn has_reference(&self, reference: SharkyHeapFrameIndex) -> bool {
         for (_, frame) in self.memory.read().iter() {
-            if frame.read().search(&SharkyDataType::HeapReference(reference)) { return true; }
+            if frame
+                .read()
+                .search(&SharkyDataType::HeapReference(reference))
+            {
+                return true;
+            }
         }
-        false 
+        false
     }
-
 }
-
 
 pub type SharkyDataStack = SharkyStack<SharkyDataType>;

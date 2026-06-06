@@ -1,8 +1,8 @@
 use derive_more::From;
 use derive_more::TryInto;
 
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
 
 use crate::ffi_collections::CVec;
 
@@ -46,12 +46,12 @@ pub enum SharkyDataType {
 impl std::fmt::Display for SharkyDataType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SharkyDataType::Max(v)            => write!(f, "Max({})", v),
-            SharkyDataType::Int(v)            => write!(f, "Int({})", v),
-            SharkyDataType::Real(v)           => write!(f, "Real({})", v),
-            SharkyDataType::Byte(v)           => write!(f, "Byte({})", v),
-            SharkyDataType::Bool(v)           => write!(f, "Bool({})", v),
-            SharkyDataType::HeapReference(v)  => write!(f, "Ref({})", v),
+            SharkyDataType::Max(v) => write!(f, "Max({})", v),
+            SharkyDataType::Int(v) => write!(f, "Int({})", v),
+            SharkyDataType::Real(v) => write!(f, "Real({})", v),
+            SharkyDataType::Byte(v) => write!(f, "Byte({})", v),
+            SharkyDataType::Bool(v) => write!(f, "Bool({})", v),
+            SharkyDataType::HeapReference(v) => write!(f, "Ref({})", v),
             SharkyDataType::ByteString(v) => {
                 let mut formatted = String::new();
                 let vec = v.get_operator();
@@ -59,8 +59,8 @@ impl std::fmt::Display for SharkyDataType {
                     formatted.push(*val as char);
                 }
                 write!(f, "")
-            },
-            SharkyDataType::Nil               => write!(f, "nil"),
+            }
+            SharkyDataType::Nil => write!(f, "nil"),
         }
     }
 }
@@ -76,6 +76,3 @@ pub enum SharkyStackMode {
     String,
     Transitional,
 }
-
-
-
