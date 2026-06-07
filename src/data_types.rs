@@ -27,6 +27,7 @@ impl SharkyValue for SharkyByte {}
 impl SharkyValue for SharkyBool {}
 impl SharkyValue for SharkyByteString {}
 
+// TODO: PartialEq might not be... appropriate. The ByteString comparison might be wrong.
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, From, TryInto)]
 #[repr(C, u8)]
 pub enum SharkyDataType {
@@ -133,18 +134,178 @@ impl SharkyDataType {
         }
     }
 
-    pub fn operate_if_are_type<T, F: FnOnce(T, T) -> SharkyDataType>(
-        lhs: SharkyDataType,
-        rhs: SharkyDataType,
-        op: F,
-    ) -> Option<SharkyDataType>
-    where
-        SharkyDataType: TryInto<T>,
-    {
-        if std::mem::discriminant(&lhs) == std::mem::discriminant(&rhs) {
-            Some(op(lhs.try_into().ok()?, rhs.try_into().ok()?))
-        } else {
-            None
+    pub fn is_numerical(&self) -> bool {
+        match *self {
+            Self::Max(_) => true,
+            Self::Int(_) => true,
+            Self::Byte(_) => true,
+            Self::Real(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_zero(&self) -> Option<bool> {
+        match *self {
+            Self::Max(v) => Some(v == 0),
+            Self::Int(v) => Some(v == 0),
+            Self::Byte(v) => Some(v == 0),
+            Self::Real(v) => Some(v == 0.0),
+            _ => None,
+        }
+    }
+
+    pub fn try_add(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l + r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l + r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l + r)),
+            (Self::Real(l), Self::Real(r)) => Some(Self::Real(l + r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_subtract(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l - r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l - r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l - r)),
+            (Self::Real(l), Self::Real(r)) => Some(Self::Real(l - r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_multiply(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l * r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l * r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l * r)),
+            (Self::Real(l), Self::Real(r)) => Some(Self::Real(l * r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_divide(lhs: Self, rhs: Self) -> Option<Self> {
+        if rhs.is_zero() == Some(true) {
+            return None;
+        }
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l / r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l / r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l / r)),
+            (Self::Real(l), Self::Real(r)) => Some(Self::Real(l / r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_mod(lhs: Self, rhs: Self) -> Option<Self> {
+        if let Some(is_zero) = rhs.is_zero() {
+            if is_zero {
+                return None;
+            }
+        }
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l % r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l % r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l % r)),
+            (Self::Real(l), Self::Real(r)) => Some(Self::Real(l % r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_shift_left(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l << r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l << r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l << r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_shift_right(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l >> r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l >> r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l >> r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_bitwise_and(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l & r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l & r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l & r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_bitwise_or(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l | r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l | r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l | r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_bitwise_xor(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Max(l ^ r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Int(l ^ r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Byte(l ^ r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_bitwise_not(val: Self) -> Option<Self> {
+        match val {
+            Self::Max(l) => Some(Self::Max(!l)),
+            Self::Int(l) => Some(Self::Int(!l)),
+            Self::Byte(l) => Some(Self::Byte(!l)),
+            _ => None,
+        }
+    }
+
+    pub fn try_equals(lhs: Self, rhs: Self) -> Option<Self> {
+        if let Some(is_zero) = rhs.is_zero() {
+            if is_zero {
+                return None;
+            }
+        }
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Bool(l == r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Bool(l == r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Bool(l == r)),
+            (Self::Real(l), Self::Real(r)) => Some(Self::Bool(l == r)),
+            (Self::Bool(l), Self::Bool(r)) => Some(Self::Bool(l == r)),
+            (Self::Nil, Self::Nil) => Some(Self::Bool(true)),
+            (Self::HeapReference(l), Self::HeapReference(r)) => Some(Self::Bool(l == r)),
+            (Self::ByteString(l), Self::ByteString(r)) => {
+                let l_vec = l.get_operator();
+                let r_vec = r.get_operator();
+                Some(Self::Bool(l_vec.as_slice() == r_vec.as_slice()))
+            }
+            _ => None,
+        }
+    }
+
+    pub fn try_greater_than(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Bool(l > r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Bool(l > r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Bool(l > r)),
+            (Self::Real(l), Self::Real(r)) => Some(Self::Bool(l > r)),
+            _ => None,
+        }
+    }
+
+    pub fn try_less_than(lhs: Self, rhs: Self) -> Option<Self> {
+        match (lhs, rhs) {
+            (Self::Max(l), Self::Max(r)) => Some(Self::Bool(l < r)),
+            (Self::Int(l), Self::Int(r)) => Some(Self::Bool(l < r)),
+            (Self::Byte(l), Self::Byte(r)) => Some(Self::Bool(l < r)),
+            (Self::Real(l), Self::Real(r)) => Some(Self::Bool(l < r)),
+            _ => None,
         }
     }
 }
