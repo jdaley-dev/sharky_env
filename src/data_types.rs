@@ -132,6 +132,21 @@ impl SharkyDataType {
             _ => None,
         }
     }
+
+    pub fn operate_if_are_type<T, F: FnOnce(T, T) -> SharkyDataType>(
+        lhs: SharkyDataType,
+        rhs: SharkyDataType,
+        op: F,
+    ) -> Option<SharkyDataType>
+    where
+        T: From<SharkyDataType>,
+    {
+        if std::mem::discriminant(&lhs) == std::mem::discriminant(&rhs) {
+            Some(op(lhs.try_into().ok()?, rhs.try_into().ok()?))
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone)]
