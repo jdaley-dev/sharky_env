@@ -59,7 +59,7 @@ impl std::fmt::Display for SharkyDataType {
                 for val in vec.iter() {
                     formatted.push(*val as char);
                 }
-                write!(f, "")
+                write!(f, "{}", formatted)
             }
             SharkyDataType::Nil => write!(f, "nil"),
         }
