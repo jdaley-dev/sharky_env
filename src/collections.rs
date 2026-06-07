@@ -21,6 +21,10 @@ impl<T: TypicalData> SharkyStack<T> {
         &self.stack
     }
 
+    pub fn get_vec_mut(&mut self) -> &mut Vec<T> {
+        &mut self.stack
+    }
+
     pub fn search(&self, value: &T) -> bool {
         self.stack.iter().any(move |v| *v == *value)
     }
