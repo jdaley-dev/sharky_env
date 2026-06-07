@@ -139,7 +139,7 @@ impl SharkyDataType {
         op: F,
     ) -> Option<SharkyDataType>
     where
-        T: From<SharkyDataType>,
+        SharkyDataType: TryInto<T>,
     {
         if std::mem::discriminant(&lhs) == std::mem::discriminant(&rhs) {
             Some(op(lhs.try_into().ok()?, rhs.try_into().ok()?))
