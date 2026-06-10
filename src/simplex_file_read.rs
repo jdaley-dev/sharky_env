@@ -1,0 +1,54 @@
+use std::io::{BufReader, Read, Seek};
+
+pub trait SimplexReadable {
+    fn le_read<T>(reader: &mut BufReader<T>) -> Option<Self>
+    where
+        Self: Sized,
+        T: Seek,
+        T: Read;
+
+    fn be_read<T>(reader: &mut BufReader<T>) -> Option<Self>
+    where
+        Self: Sized,
+        T: Seek,
+        T: Read;
+}
+
+macro_rules! impl_simplex_readable {
+    ($type:ty, $size:expr) => {
+        impl SimplexReadable for $type {
+            fn le_read<T>(reader: &mut BufReader<T>) -> Option<Self>
+            where
+                Self: Sized,
+                T: Seek,
+                T: Read,
+            {
+                let mut buf = [0u8; $size];
+                reader.read(&mut buf).ok()?;
+                Some(<$type>::from_le_bytes(buf))
+            }
+
+            fn be_read<T>(reader: &mut BufReader<T>) -> Option<Self>
+            where
+                Self: Sized,
+                T: Seek,
+                T: Read,
+            {
+                let mut buf = [0u8; $size];
+                reader.read(&mut buf).ok()?;
+                Some(<$type>::from_be_bytes(buf))
+            }
+        }
+    };
+}
+
+impl_simplex_readable!(u16, 2);
+impl_simplex_readable!(i16, 2);
+impl_simplex_readable!(u32, 4);
+impl_simplex_readable!(i32, 4);
+impl_simplex_readable!(u64, 8);
+impl_simplex_readable!(i64, 8);
+impl_simplex_readable!(u128, 16);
+impl_simplex_readable!(i128, 16);
+impl_simplex_readable!(f32, 4);
+impl_simplex_readable!(f64, 8);

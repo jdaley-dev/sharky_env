@@ -1,3 +1,4 @@
+pub mod simplex_file_read;
 pub mod data_types;
 pub mod collections;
 pub mod ffi;
