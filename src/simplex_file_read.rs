@@ -42,6 +42,22 @@ macro_rules! impl_simplex_readable {
     };
 }
 
+pub fn simplex_le_read<T: SimplexReadable, U>(buf: &mut BufReader<U>) -> Option<T>
+where
+    U: Seek,
+    U: Read,
+{
+    T::le_read(buf)
+}
+
+pub fn simplex_be_read<T: SimplexReadable, U>(buf: &mut BufReader<U>) -> Option<T>
+where
+    U: Seek,
+    U: Read,
+{
+    T::be_read(buf)
+}
+
 impl_simplex_readable!(u16, 2);
 impl_simplex_readable!(i16, 2);
 impl_simplex_readable!(u32, 4);
