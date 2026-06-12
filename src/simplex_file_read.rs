@@ -1,4 +1,4 @@
-use std::io::{BufReader, Read, Seek};
+use std::io::{BufRead, BufReader, Read, Seek};
 
 pub trait SimplexReadable {
     fn le_read<T>(reader: &mut BufReader<T>) -> Option<Self>
@@ -56,6 +56,16 @@ where
     U: Read,
 {
     T::be_read(buf)
+}
+
+pub fn simplex_string_read<T>(buf: &mut BufReader<T>) -> Option<String>
+where
+    T: Seek,
+    T: Read,
+{
+    let mut buffer: Vec<u8> = Vec::new();
+    buf.read_until(0, &mut buffer).ok()?;
+    Some(String::from_utf8(buffer).ok()?)
 }
 
 impl_simplex_readable!(u16, 2);
